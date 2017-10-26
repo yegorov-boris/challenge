@@ -8,7 +8,14 @@ module Lib
     , longestConsec
     , findMissing
     , isPrime
+    , orderWeight
+    , combinations
+    , chooseBestSum
     ) where
+
+import Data.List (sortBy, tails, maximumBy)
+import Data.Ord (compare, comparing)
+import Data.Function (on)
 
 someFunc :: Int -> Int -> Int
 someFunc a b = a * b
@@ -160,3 +167,33 @@ isPrime x
         | otherwise = prime $ i + 1
     in
       prime 2
+
+orderWeight :: [Char] -> [Char]
+orderWeight =
+  let
+    comparingDigSums = comparing (sum . map (\c -> read [c] :: Int))
+    comparator a b = if comparingDigSums a b == EQ then compare a b else comparingDigSums a b
+  in
+    unwords . sortBy comparator . words
+
+-- John and Mary want to travel between a few towns A, B, C ...
+-- Mary has on a sheet of paper a list of distances between these towns. ls = [50, 55, 57, 58, 60].
+-- John is tired of driving and he says to Mary that he doesn't want to drive more than t = 174 miles
+-- and he will visit only 3 towns.
+chooseBestSum :: Int -> Int -> [Int] -> Maybe Int
+chooseBestSum t k ls =
+  let
+    filterCombinations [] = []
+    filterCombinations [[]] = []
+    filterCombinations xs = filter (<= t) $ map sum xs
+    chooseMaxSum [] = Nothing
+    chooseMaxSum xs = Just $ maximum xs
+  in
+    chooseMaxSum $ filterCombinations $ combinations k ls
+
+combinations :: Int -> [a] -> [[a]]
+combinations 0 _  = [ [] ]
+combinations n xs = [ y:ys | y:xs' <- tails xs, ys <- combinations (n-1) xs']
+
+if' :: (t1 -> Bool) -> (t1 -> t) -> (t1 -> t) -> t1 -> t
+if' cond onTrue onFalse a = if cond a then onTrue a else onFalse a
