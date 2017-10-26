@@ -11,6 +11,7 @@ module Lib
     , orderWeight
     , combinations
     , chooseBestSum
+    , solution
     ) where
 
 import Data.List (sortBy, tails, maximumBy)
@@ -197,3 +198,19 @@ combinations n xs = [ y:ys | y:xs' <- tails xs, ys <- combinations (n-1) xs']
 
 if' :: (t1 -> Bool) -> (t1 -> t) -> (t1 -> t) -> t1 -> t
 if' cond onTrue onFalse a = if cond a then onTrue a else onFalse a
+
+-- solution :: [Int] -> String
+solution [] = ""
+solution myList =
+  let
+    curToString [] = ""
+    curToString [a] = show a
+    curToString [a, b] = (show b) ++ "," ++ (show a)
+    curToString cur = (show $ last cur) ++ "-" ++ (show $ head cur)
+    foo s cur [] = (curToString cur):s
+    foo s [] (y:ys) = foo s [y] ys
+    foo s cur@(x:xs) (y:ys)
+      | y - x == 1 = foo s (y:cur) ys
+      | otherwise = foo ((curToString cur):s) [y] ys
+  in
+    foldl1 (\s a -> s ++ ',':a) $ reverse $ foo [] [] myList
