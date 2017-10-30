@@ -12,6 +12,7 @@ module Lib
     , combinations
     , chooseBestSum
     , solution
+    , listSquared
     ) where
 
 import Data.List (sortBy, tails, maximumBy)
@@ -199,7 +200,7 @@ combinations n xs = [ y:ys | y:xs' <- tails xs, ys <- combinations (n-1) xs']
 if' :: (t1 -> Bool) -> (t1 -> t) -> (t1 -> t) -> t1 -> t
 if' cond onTrue onFalse a = if cond a then onTrue a else onFalse a
 
--- solution :: [Int] -> String
+solution :: [Int] -> String
 solution [] = ""
 solution myList =
   let
@@ -214,3 +215,35 @@ solution myList =
       | otherwise = foo ((curToString cur):s) [y] ys
   in
     foldl1 (\s a -> s ++ ',':a) $ reverse $ foo [] [] myList
+
+listSquared :: Int -> Int -> [(Int, Int)]
+listSquared m n
+  | m < 1 = []
+  | n < m = []
+  | otherwise =
+    let
+      sumSquaredDivisors x =
+        let
+          getSumSquaredDivisors s i
+            | i > x = s
+            | otherwise =
+              if
+                x `mod` i == 0
+              then
+                getSumSquaredDivisors (s + i^2) (i + 1)
+              else
+                getSumSquaredDivisors s (i + 1)
+        in
+          getSumSquaredDivisors 0 1
+      isSquare x = (round (sqrt $ fromIntegral x)^2) == x
+      getListSquared l i
+        | i < m = l
+        | otherwise =
+          if
+            isSquare $ sumSquaredDivisors i
+          then
+            getListSquared ((i, sumSquaredDivisors i):l) (i - 1)
+          else
+            getListSquared l (i - 1)
+    in
+      getListSquared [] n
