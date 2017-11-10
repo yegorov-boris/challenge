@@ -1,8 +1,8 @@
 module Main where
 
 import Lib
+import FixedPoint
 
 main :: IO ()
 main = do
---     putStrLn $ show $ someFunc 7 7
-    putStrLn $ likes ["sdfgsd", "dsfgers", "b7868", "af43as"]
+    putStrLn $ show $ (fix foldr') (+) 0 [42, 73]
