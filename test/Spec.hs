@@ -1,10 +1,15 @@
 import Test.Hspec
 import Test.QuickCheck
 
-import Lib
+-- import Lib
+import HammingNumbers
 
 main = hspec $ do
-  describe "Lib Tests" $ do
+  describe "HammingNumbers Tests" $ do
+    describe "hamming" $ do
+      it "should get 19th Hamming number" $ hamming 19 `shouldBe` 32
+      it "should get 5000th Hamming number" $ hamming 5000 `shouldBe` 50837316566580
+--   describe "Lib Tests" $ do
 --     describe "someFunc"
 --       it "should multiply ints" $ someFunc 7 7 `shouldBe` (49 :: Int)
 --     describe "likes" $ do
@@ -39,13 +44,13 @@ main = hspec $ do
 --               x'  = x + y * n :: Integer  -- the according number in the sequence
 --               xs  = filter (/= x') $ xs'  -- the sequence without that number
 --           in findMissing xs `shouldBe` x' -- the test against your function
-    describe "isPrime" $ do
-      it "should work for some examples" $ do
-        isPrime 0        `shouldBe` False
-        isPrime 1        `shouldBe` False
-        isPrime 2        `shouldBe` True
-        isPrime 17       `shouldBe` True
-        isPrime 23423527 `shouldBe` True
+--     describe "isPrime" $ do
+--       it "should work for some examples" $ do
+--         isPrime 0        `shouldBe` False
+--         isPrime 1        `shouldBe` False
+--         isPrime 2        `shouldBe` True
+--         isPrime 17       `shouldBe` True
+--         isPrime 23423527 `shouldBe` True
 --       it "should work for negative numbers" $ quickCheckWith stdArgs { maxSuccess = 100 } $ do
 --         forAll (choose (-1,-(2^32))) $ \x -> do
 --           isPrime x `shouldBe` False
