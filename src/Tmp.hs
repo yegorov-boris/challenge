@@ -1,5 +1,6 @@
 module Tmp
-  ( evaluateFunction
+  ( ef
+  , evaluateFunction
   , factorial
   , fibonacci
   , coinchange
@@ -7,11 +8,42 @@ module Tmp
   , foo
   ) where
 
-evaluateFunction :: Ord a => (a -> Either b ([a], [b] -> b)) -> a -> b
+import Data.List
+-- import Data.Maybe
 
-evaluateFunction f a = case f a of
-  Left l -> l
-  Right (args, handler) -> handler $ map (evaluateFunction f) args
+evaluateFunction :: Ord a => (a -> Either b ([a], [b] -> b)) -> a -> b
+evaluateFunction f a =
+  let
+    findByFst arg = (== arg) . fst
+    ef state f a = case f a of
+      Left l -> case find findByFst state of
+        Nothing -> ((a, l):state, l)
+        Just _ -> (state, l)
+      Right (args, handler) ->
+        let
+          processArg s arg = case find (findByFst arg) state of
+            Nothing ->
+              let
+                (currentState, processedArg) = ef s f arg
+              in
+                ((arg, processedArg):currentState, processedArg)
+            Just (k, v) -> (s, v)
+          processArgs s result (h:t) =
+            let
+              (currentState, processedArg) = processArg h
+              currentResult = processedArg:result
+            in
+              if
+                null t
+              then
+                (currentState, currentResult)
+              else
+                processArgs currentState currentResult t
+          (currentState, valsToHandle) = processArgs state [] $ sort args
+        in
+          (currentState, handler valsToHandle)
+  in
+    snd $ ef [] f a
 
 factorial i | i == 0    = Left 1
             | otherwise = Right ([i-1], (*i).head)
