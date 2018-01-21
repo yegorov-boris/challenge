@@ -1,28 +1,29 @@
 module Tmp
   ( evaluateFunction
+  , ef
   , factorial
   , fibonacci
+  , coinlist
   , coinchange
   , heigth
   , foo
   ) where
 
 import Data.List
--- import Data.Maybe
 
 evaluateFunction :: Ord a => (a -> Either b ([a], [b] -> b)) -> a -> b
-evaluateFunction f a = snd $ ef [] f a
+evaluateFunction f a = case ef [] f a of
+  Left (state, l) -> l
+  Right (state, r) -> r
 
-ef :: Ord a => [(a, b)] -> (a -> Either b ([a], [b] -> b)) -> a -> ([(a, b)], b)
+ef :: Ord a => [(a, b)] -> (a -> Either b ([a], [b] -> b)) -> a -> Either ([(a, b)], b) ([(a, b)], b)
 ef state f a = case f a of
-  Left l -> case findByFst a state of
-    Nothing -> ((a, l):state, l)
-    Just _ -> (state, l)
+  Left l -> Left (state, l)
   Right (args, handler) ->
     let
       (currentState, valsToHandle) = processArgs f state [] $ sort args
     in
-      (currentState, handler valsToHandle)
+      Right (currentState, handler valsToHandle)
 
 processArgs :: Ord a => (a -> Either b ([a], [b] -> b)) -> [(a, b)] -> [b] -> [a] -> ([(a, b)], [b])
 processArgs f state result (h:t) =
@@ -40,10 +41,12 @@ processArgs f state result (h:t) =
 processArg :: Ord a => (a -> Either b ([a], [b] -> b)) -> [(a, b)] -> a -> ([(a, b)], b)
 processArg f state arg = case findByFst arg state of
   Nothing ->
-    let
-      (currentState, processedArg) = ef state f arg
-    in
-      ((arg, processedArg):currentState, processedArg)
+    case ef state f arg of
+      Left l -> l
+      Right (currentState, processedArg) ->
+        case findByFst arg currentState of
+          Nothing -> ((arg, processedArg):currentState, processedArg)
+          Just _ -> (currentState, processedArg)
   Just (k, v) -> (state, v)
 
 findByFst :: Ord a => a -> [(a, b)] -> Maybe (a, b)
