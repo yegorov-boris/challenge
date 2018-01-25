@@ -11,21 +11,33 @@ module Tmp
 
 import Data.List
 
-evaluateFunction :: Ord a => (a -> Either b ([a], [b] -> b)) -> a -> b
-evaluateFunction f a = case ef [] f a of
+type F a b = a -> Either b ([a], [b] -> b)
+type State a b = ([(a, b)], Either Int Int)
+
+evaluateFunction :: Ord a => F a b -> a -> b
+evaluateFunction f a = case ef ([], Right 0) f a of
   Left (state, l) -> l
   Right (state, r) -> r
 
-ef :: Ord a => [(a, b)] -> (a -> Either b ([a], [b] -> b)) -> a -> Either ([(a, b)], b) ([(a, b)], b)
+ef :: Ord a => State a b -> F a b -> a -> Either (State a b, b) (State a b, b)
 ef state f a = case f a of
-  Left l -> Left (state, l)
+  Left l ->
+    let
+      newDepth = case snd state of
+        Right depth -> Left depth
+        Left depth -> Left depth
+    in
+      Left ((fst state, newDepth), l)
   Right (args, handler) ->
     let
-      (currentState, valsToHandle) = processArgs f state [] $ sort args
+      newDepth = case snd state of
+        Right depth -> Right (depth + 1)
+        Left depth -> Left depth
+      (currentState, valsToHandle) = processArgs f (fst state, newDepth) [] $ sort args
     in
       Right (currentState, handler valsToHandle)
 
-processArgs :: Ord a => (a -> Either b ([a], [b] -> b)) -> [(a, b)] -> [b] -> [a] -> ([(a, b)], [b])
+processArgs :: Ord a => F a b -> State a b -> [b] -> [a] -> (State a b, [b])
 processArgs f state result (h:t) =
   let
     (currentState, processedArg) = processArg f state h
@@ -38,19 +50,23 @@ processArgs f state result (h:t) =
     else
       processArgs f currentState currentResult t
 
-processArg :: Ord a => (a -> Either b ([a], [b] -> b)) -> [(a, b)] -> a -> ([(a, b)], b)
-processArg f state arg = case findByFst arg state of
+processArg :: Ord a => F a b -> State a b -> a -> (State a b, b)
+processArg f state arg = case findState arg state of
   Nothing ->
     case ef state f arg of
       Left l -> l
       Right (currentState, processedArg) ->
-        case findByFst arg currentState of
-          Nothing -> ((arg, processedArg):currentState, processedArg)
+        case findState arg currentState of
+          Nothing ->
+            let
+              newPairs = drop ((length currentState) - 50) $ (arg, processedArg):(fst currentState)
+            in
+              ((newPairs, snd currentState), processedArg)
           Just _ -> (currentState, processedArg)
   Just (k, v) -> (state, v)
 
-findByFst :: Ord a => a -> [(a, b)] -> Maybe (a, b)
-findByFst arg = find $ (== arg) . fst
+findState :: Ord a => a -> State a b -> Maybe (a, b)
+findState arg = (find ((== arg) . fst)) . fst
 
 factorial i | i == 0    = Left 1
             | otherwise = Right ([i-1], (*i).head)
