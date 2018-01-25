@@ -11,33 +11,39 @@ module Tmp
 
 import Data.List
 
+data Ord a => Tree a b = NilNode | Node (Tree a b) (a, b) (Tree a b) deriving Show
+
+findInTree :: Ord a => Tree a b -> a -> Maybe b
+findInTree NilNode _ = Nothing
+findInTree (Node tLeft (k, v) tRight) x
+  | x == k = Just v
+  | x < k = findInTree tLeft x
+  | otherwise = findInTree tRight x
+
+insertNode :: (Ord a) => Tree a b -> (a, b) -> Tree a b
+insertNode NilNode x = Node NilNode x NilNode
+insertNode (Node tLeft (k, v) tRight) (kx, vx)
+  | k == kx = Node tLeft (k, v) tRight
+  | k < kx = Node tLeft (k, v) (insertNode tRight (kx, vx))
+  | otherwise = Node (insertNode tLeft (kx, vx)) (k, v) tRight
+
 type F a b = a -> Either b ([a], [b] -> b)
-type State a b = ([(a, b)], Either Int Int)
 
 evaluateFunction :: Ord a => F a b -> a -> b
-evaluateFunction f a = case ef ([], Right 0) f a of
+evaluateFunction f a = case ef NilNode f a of
   Left (state, l) -> l
   Right (state, r) -> r
 
-ef :: Ord a => State a b -> F a b -> a -> Either (State a b, b) (State a b, b)
+ef :: Ord a => Tree a b -> F a b -> a -> Either (Tree a b, b) (Tree a b, b)
 ef state f a = case f a of
-  Left l ->
-    let
-      newDepth = case snd state of
-        Right depth -> Left depth
-        Left depth -> Left depth
-    in
-      Left ((fst state, newDepth), l)
+  Left l -> Left (state, l)
   Right (args, handler) ->
     let
-      newDepth = case snd state of
-        Right depth -> Right (depth + 1)
-        Left depth -> Left depth
-      (currentState, valsToHandle) = processArgs f (fst state, newDepth) [] $ sort args
+      (currentState, valsToHandle) = processArgs f state [] $ sort args
     in
       Right (currentState, handler valsToHandle)
 
-processArgs :: Ord a => F a b -> State a b -> [b] -> [a] -> (State a b, [b])
+processArgs :: Ord a => F a b -> Tree a b -> [b] -> [a] -> (Tree a b, [b])
 processArgs f state result (h:t) =
   let
     (currentState, processedArg) = processArg f state h
@@ -50,23 +56,13 @@ processArgs f state result (h:t) =
     else
       processArgs f currentState currentResult t
 
-processArg :: Ord a => F a b -> State a b -> a -> (State a b, b)
-processArg f state arg = case findState arg state of
+processArg :: Ord a => F a b -> Tree a b -> a -> (Tree a b, b)
+processArg f state arg = case findInTree state arg of
   Nothing ->
     case ef state f arg of
       Left l -> l
-      Right (currentState, processedArg) ->
-        case findState arg currentState of
-          Nothing ->
-            let
-              newPairs = drop ((length currentState) - 50) $ (arg, processedArg):(fst currentState)
-            in
-              ((newPairs, snd currentState), processedArg)
-          Just _ -> (currentState, processedArg)
-  Just (k, v) -> (state, v)
-
-findState :: Ord a => a -> State a b -> Maybe (a, b)
-findState arg = (find ((== arg) . fst)) . fst
+      Right (currentState, processedArg) -> (insertNode currentState (arg, processedArg), processedArg)
+  Just v -> (state, v)
 
 factorial i | i == 0    = Left 1
             | otherwise = Right ([i-1], (*i).head)
