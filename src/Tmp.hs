@@ -31,18 +31,16 @@ insertTree key value ((Tree trees k v):t)
   | otherwise = (Tree trees k v):(insertTree key value t)
 
 evaluateFunction :: Ord a => F a b -> a -> b
-evaluateFunction f a = case ef [Tree [] a Nothing] f a of
-  Left (state, l) -> l
-  Right (state, r) -> r
+evaluateFunction f a = snd $ ef [Tree [] a Nothing] f a
 
-ef :: Ord a => State a b -> F a b -> a -> Either (State a b, b) (State a b, b)
+ef :: Ord a => State a b -> F a b -> a -> (State a b, b)
 ef state f a = case f a of
-  Left l -> Left (state, l)
+  Left l -> (insertTree a (Just l) state, l)
   Right (args, handler) ->
     let
       (currentState, valsToHandle) = processArgs f state [] $ sort args
     in
-      Right (currentState, handler valsToHandle)
+      (currentState, handler valsToHandle)
 
 processArgs :: Ord a => F a b -> State a b -> [b] -> [a] -> (State a b, [b])
 processArgs f state result [] = (state, result)
@@ -55,9 +53,10 @@ processArgs f state result (h:t) =
 processArg :: Ord a => F a b -> State a b -> a -> (State a b, b)
 processArg f state arg = case findInTrees state arg of
   Nothing ->
-    case ef (insertTree arg Nothing state) f arg of
-      Left l -> l
-      Right (currentState, processedArg) -> (insertTree arg (Just processedArg) currentState, processedArg)
+    let
+      (currentState, processedArg) = ef (insertTree arg Nothing state) f arg
+    in
+      (insertTree arg (Just processedArg) currentState, processedArg)
   Just v -> (state, v)
 
 factorial i | i == 0    = Left 1
