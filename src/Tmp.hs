@@ -11,30 +11,31 @@ module Tmp
 
 import Data.List
 
-data Ord a => Tree a b = NilNode | Node (Tree a b) (a, b) (Tree a b) deriving Show
+data Tree a b = Tree [Tree a b] a (Maybe b) deriving Show
 
-findInTree :: Ord a => Tree a b -> a -> Maybe b
-findInTree NilNode _ = Nothing
-findInTree (Node tLeft (k, v) tRight) x
-  | x == k = Just v
-  | x < k = findInTree tLeft x
-  | otherwise = findInTree tRight x
-
-insertNode :: (Ord a) => Tree a b -> (a, b) -> Tree a b
-insertNode NilNode x = Node NilNode x NilNode
-insertNode (Node tLeft (k, v) tRight) (kx, vx)
-  | k == kx = Node tLeft (k, v) tRight
-  | k < kx = Node tLeft (k, v) (insertNode tRight (kx, vx))
-  | otherwise = Node (insertNode tLeft (kx, vx)) (k, v) tRight
-
+type State a b = [Tree a b]
 type F a b = a -> Either b ([a], [b] -> b)
 
+findInTrees :: Ord a => State a b -> a -> Maybe b
+findInTrees [] _ = Nothing
+findInTrees ((Tree trees k v):t) x
+  | x == k = v
+  | x < k = findInTrees trees x
+  | otherwise = findInTrees t x
+
+insertTree :: Ord a => a -> (Maybe b) -> State a b -> State a b
+insertTree key value [] = [Tree [] key value]
+insertTree key value ((Tree trees k v):t)
+  | key == k = (Tree trees k value):t
+  | key < k = (Tree (insertTree key value trees) k v):t
+  | otherwise = (Tree trees k v):(insertTree key value t)
+
 evaluateFunction :: Ord a => F a b -> a -> b
-evaluateFunction f a = case ef NilNode f a of
+evaluateFunction f a = case ef [Tree [] a Nothing] f a of
   Left (state, l) -> l
   Right (state, r) -> r
 
-ef :: Ord a => Tree a b -> F a b -> a -> Either (Tree a b, b) (Tree a b, b)
+ef :: Ord a => State a b -> F a b -> a -> Either (State a b, b) (State a b, b)
 ef state f a = case f a of
   Left l -> Left (state, l)
   Right (args, handler) ->
@@ -43,25 +44,20 @@ ef state f a = case f a of
     in
       Right (currentState, handler valsToHandle)
 
-processArgs :: Ord a => F a b -> Tree a b -> [b] -> [a] -> (Tree a b, [b])
+processArgs :: Ord a => F a b -> State a b -> [b] -> [a] -> (State a b, [b])
+processArgs f state result [] = (state, result)
 processArgs f state result (h:t) =
   let
     (currentState, processedArg) = processArg f state h
-    currentResult = processedArg:result
   in
-    if
-      null t
-    then
-      (currentState, currentResult)
-    else
-      processArgs f currentState currentResult t
+    processArgs f currentState (processedArg:result) t
 
-processArg :: Ord a => F a b -> Tree a b -> a -> (Tree a b, b)
-processArg f state arg = case findInTree state arg of
+processArg :: Ord a => F a b -> State a b -> a -> (State a b, b)
+processArg f state arg = case findInTrees state arg of
   Nothing ->
-    case ef state f arg of
+    case ef (insertTree arg Nothing state) f arg of
       Left l -> l
-      Right (currentState, processedArg) -> (insertNode currentState (arg, processedArg), processedArg)
+      Right (currentState, processedArg) -> (insertTree arg (Just processedArg) currentState, processedArg)
   Just v -> (state, v)
 
 factorial i | i == 0    = Left 1
