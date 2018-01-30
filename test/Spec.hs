@@ -2,13 +2,19 @@ import Test.Hspec
 import Test.QuickCheck
 
 -- import Lib
-import HammingNumbers
+-- import HammingNumbers
+import RecursiveRelations
 
 main = hspec $ do
-  describe "HammingNumbers Tests" $ do
-    describe "hamming" $ do
-      it "should get 19th Hamming number" $ hamming 19 `shouldBe` 32
-      it "should get 5000th Hamming number" $ hamming 5000 `shouldBe` 50837316566580
+  describe "RecursiveRelations Tests" $ do
+    it "should evaluate fibonacci" $ evaluateFunction fibonacci 100 `shouldBe` 354224848179261915075
+    it "should evaluate coinchange" $ evaluateFunction coinchange (500, length coinlist) `shouldBe` 146948
+    it "should evaluate heigth" $ evaluateFunction heigth (100, 150) `shouldBe` 1427228946471605830963606579751332537625641011
+    it "should evaluate foo" $ evaluateFunction foo (10^12 - 3) `shouldBe` 10393063677856661930403634886614144354995461022573498
+--   describe "HammingNumbers Tests" $ do
+--     describe "hamming" $ do
+--       it "should get 19th Hamming number" $ hamming 19 `shouldBe` 32
+--       it "should get 5000th Hamming number" $ hamming 5000 `shouldBe` 50837316566580
 --   describe "Lib Tests" $ do
 --     describe "someFunc"
 --       it "should multiply ints" $ someFunc 7 7 `shouldBe` (49 :: Int)

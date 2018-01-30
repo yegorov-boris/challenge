@@ -1,4 +1,4 @@
-module Tmp
+module RecursiveRelations
   ( evaluateFunction
   , ef
   , factorial
@@ -35,7 +35,7 @@ evaluateFunction f a = snd $ ef [Tree [] a Nothing] f a
 
 ef :: Ord a => State a b -> F a b -> a -> (State a b, b)
 ef state f a = case f a of
-  Left l -> (insertTree a (Just l) state, l)
+  Left l -> (state, l)
   Right (args, handler) ->
     let
       (currentState, valsToHandle) = processArgs f state [] $ sort args
