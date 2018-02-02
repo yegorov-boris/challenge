@@ -1,8 +1,8 @@
 module Main where
 
-import Lib
-import FixedPoint
+-- import Lib
+-- import FixedPoint
 
 main :: IO ()
 main = do
-    putStrLn $ show $ (fix foldr') (+) 0 [42, 73]
+    putStrLn $ show [42, 73]

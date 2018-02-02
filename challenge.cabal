@@ -15,12 +15,13 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     Lib
-                     , FixedPoint
-                     , Permutations
-                     , HammingNumbers
-                     , RecursiveRelations
-                     , RectangleRotation
+  exposed-modules:     Ones
+--                     , Lib
+--                     , FixedPoint
+--                     , Permutations
+--                     , HammingNumbers
+--                     , RecursiveRelations
+--                     , RectangleRotation
   build-depends:       base >= 4.7 && < 5
   default-language:    Haskell2010
 
