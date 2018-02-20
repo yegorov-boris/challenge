@@ -15,7 +15,8 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     Ones
+  exposed-modules:     LispLovesMe
+--                       , Ones
 --                     , Lib
 --                     , FixedPoint
 --                     , Permutations
