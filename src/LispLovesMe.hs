@@ -1,9 +1,9 @@
 module LispLovesMe
   ( lispEval
-  , replace
+  , tokenize
   ) where
 
-import Data.List (elem, foldl, reverse)
+import Data.List (elem, foldl, reverse, words)
 
 data AST = I32 Int
          | Sym String
@@ -41,7 +41,11 @@ data AST = I32 Int
 lispEval :: String -> Maybe AST
 lispEval s = Just $ I32 42
 
-replace :: String -> String -> String
-replace [] s = s
-replace _ [] = []
-replace chars s = reverse $ foldl (\result c -> if c `elem` chars then result else c:result) [] s
+tokenize :: String -> String -> [String]
+tokenize [] s = [s]
+tokenize _ [] = []
+tokenize separators s =
+  let
+    separate result c = if c `elem` separators then ' ':result else c:result
+  in
+    words $ reverse $ foldl separate "" s
