@@ -14,26 +14,26 @@ data AST = I32 Int
          | Nod AST [AST]
          deriving (Eq, Show)
 
--- preludeFunctions :: [(String, [AST] -> AST)]
--- preludeFunctions =
---   [ ("+", undefined)
---   , ("*", undefined)
---   , ("-", undefined)
---   , ("/", undefined)
---   , ("^", undefined)
---   , (">", undefined)
---   , ("<", undefined)
---   , ("!", undefined)
---   , ("list", undefined)
---   , ("size", undefined)
---   , ("reverse", undefined)
---   , ("..", undefined)
---   , ("==", undefined)
---   , (">=", undefined)
---   , ("<=", undefined)
---   , ("!=", undefined)
---   , ("if", undefined)
---   ]
+preludeFunctions :: [(String, [AST] -> AST)]
+preludeFunctions =
+  [ ("+", foldArgs (+))
+  , ("*", foldArgs (*))
+  , ("-", foldArgs (-))
+  , ("/", foldArgs (/))
+  , ("^", pow)
+  , (">", cmp (>))
+  , ("<", cmp (<))
+  , ("!", neg)
+  , ("list", Lst)
+  , ("size", I32 . length)
+  , ("reverse", Lst . reverse)
+  , ("..", range)
+  , ("==", cmp (==))
+  , (">=", cmp (>=))
+  , ("<=", cmp (<=))
+  , ("!=", cmp (!=))
+  , ("if", if')
+  ]
 
 -- lispPretty :: String -> Maybe String
 -- lispPretty s = undefined
@@ -49,3 +49,37 @@ tokenize separators s =
     separate result c = if c `elem` separators then ' ':result else c:result
   in
     words $ reverse $ foldl separate "" s
+
+pow :: [AST] -> AST
+pow [(I32 a), (I32 b)] = I32 (a^b)
+pow _ = Err
+
+neg :: [AST] -> AST
+neg [(Boo x)] = Boo $ not x
+neg _ = Err
+
+if' :: [AST] -> AST
+if' [(Boo a), b, c] = if a then b else c
+if' _ = Err
+
+range :: [AST] -> AST
+range [(I32 a), (I32 b)] = Lst $ map I32 [a..b]
+range _ = Err
+
+cmp :: (Int -> Int -> Bool) -> [AST] -> AST
+cmp f [(I32 a), (I32 b)] = Boo (f a b)
+cmp _ _ = Err
+
+foldArgs :: (Int -> Int -> Int) -> [AST] -> AST
+foldArgs f xs =
+  if
+    length xs > 1
+  then
+    let
+      f' result element = case (result, element) of
+        ((I32 a), (I32 b)) -> I32 (f a b)
+        _ -> Err
+    in
+      foldl f' (head xs) (tail xs)
+  else
+    Err
